@@ -26,8 +26,8 @@
 	</developers>
 	<scm>
 		<url>https://github.com/uchicom/zipadd</url>
-		<connection>scm:git:git@github.com:uchicom/util.git</connection>
-		<developerConnection>scm:git:git@github.com:uchicom/util.git</developerConnection>
+		<connection>scm:git:git@github.com:uchicom/zipadd.git</connection>
+		<developerConnection>scm:git:git@github.com:uchicom/zipaddgit</developerConnection>
 	</scm>
 	<distributionManagement>
 		<snapshotRepository>
