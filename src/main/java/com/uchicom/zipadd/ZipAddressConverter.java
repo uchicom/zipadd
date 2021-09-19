@@ -2,9 +2,7 @@
 package com.uchicom.zipadd;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
-import java.net.URLConnection;
 import java.util.regex.Pattern;
 
 /**
@@ -32,7 +30,7 @@ public class ZipAddressConverter {
    *
    * @param zipCode 郵便番号
    * @return 都道府県市区町村と町域で分割した配列
-   * @throws IOException
+   * @throws IOException 日本郵便のWEBサイト参照時にエラーがあった場合
    */
   public String[] convertSplitAddress(String zipCode) throws IOException {
     var result = getAddress(zipCode);
@@ -42,6 +40,13 @@ public class ZipAddressConverter {
     return null;
   }
 
+  /**
+   * 日本郵便のWEBサイトから抽出した住所を取得します.
+   *
+   * @param zipCode 郵便番号
+   * @return 日本郵便のWEBサイトから抽出した住所
+   * @throws IOException 日本郵便のWEBサイト参照時にエラーがあった場合
+   */
   public String getAddress(String zipCode) throws IOException {
     var url = new URL("https://www.post.japanpost.jp/kt/zip/e2.cgi?z=" + zipCode + "&xr=1");
     var html = getHtml(url);
@@ -53,13 +58,20 @@ public class ZipAddressConverter {
     return null;
   }
 
+  /**
+   * 日本郵便のWEBサイトのテキストデータを取得します.
+   *
+   * @param url 日本郵便のWEBサイトURL
+   * @return 日本郵便のWEBサイトのテキストデータ
+   * @throws IOException 日本郵便のWEBサイト参照時にエラーがあった場合
+   */
   public String getHtml(URL url) throws IOException {
-    URLConnection con = url.openConnection();
+    var con = url.openConnection();
     con.setRequestProperty("Accept-Charset", "Shift_JIS,*;q=0.5");
     con.setRequestProperty("Accept-Language", "ja,en-US;q=0.8,en;q=0.6");
     con.setRequestProperty("User-Agent", "zipadd/0.0.1");
 
-    try (InputStream is = con.getInputStream()) {
+    try (var is = con.getInputStream()) {
       return new String(is.readAllBytes(), "MS932");
     }
   }
