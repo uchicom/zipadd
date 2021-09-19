@@ -16,6 +16,7 @@ public class ZipAddressConverter {
    *
    * @param zipCode 郵便番号
    * @return 連結した住所
+   * @throws IOException 日本郵便のWEBサイト参照時にエラーがあった場合
    */
   public String convertAddress(String zipCode) throws IOException {
     var address = getAddress(zipCode);
