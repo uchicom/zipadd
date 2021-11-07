@@ -41,6 +41,13 @@ public class ZipAddressConverter {
     return null;
   }
 
+  /**
+   * 日本郵便のWEBサイトから抽出した「他に掲載がない場合」を除去した住所を取得します.
+   *
+   * @param zipCode 郵便番号
+   * @return 日本郵便のWEBサイトから抽出した「他に掲載がない場合」を除去した住所
+   * @throws IOException 日本郵便のWEBサイト参照時にエラーがあった場合
+   */
   public String getAddress(String zipCode) throws IOException {
     var extractAddress = getExtractAddress(zipCode);
     if (extractAddress != null) {
@@ -52,6 +59,7 @@ public class ZipAddressConverter {
     }
     return null;
   }
+
   /**
    * 日本郵便のWEBサイトから抽出した住所を取得します.
    *
