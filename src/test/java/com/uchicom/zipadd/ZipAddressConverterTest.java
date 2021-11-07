@@ -22,19 +22,38 @@ public class ZipAddressConverterTest {
   public void setUp() throws Exception {
 
     zipAddressConverter = Mockito.spy(ZipAddressConverter.class);
-    try (FileInputStream fis = new FileInputStream(new File("./src/test/resources/test.html"))) {
+  }
+
+  private void mock2510025() throws Exception {
+    mock("./src/test/resources/2510025.html");
+  }
+
+  private void mock2510000() throws Exception {
+    mock("./src/test/resources/2510000.html");
+  }
+
+  private void mock(String path) throws Exception {
+    try (FileInputStream fis = new FileInputStream(new File(path))) {
       html = new String(fis.readAllBytes(), Charset.forName("Shift_JIS"));
       Mockito.doReturn(html).when(zipAddressConverter).getHtml(Mockito.any());
     }
   }
 
   @Test
-  public void convertAddress() throws Exception {
+  public void convertAddress2510025() throws Exception {
+    mock2510025();
     assertThat(zipAddressConverter.convertAddress("2510025")).isEqualTo("神奈川県藤沢市鵠沼石上");
   }
 
   @Test
+  public void convertAddress2510000() throws Exception {
+    mock2510000();
+    assertThat(zipAddressConverter.convertAddress("2510000")).isEqualTo("神奈川県藤沢市");
+  }
+
+  @Test
   public void convertSplitAddress() throws Exception {
+    mock2510025();
     var result = zipAddressConverter.convertSplitAddress("2510025");
     assertThat(result).hasSize(2);
     assertThat(result[0]).isEqualTo("神奈川県藤沢市");
@@ -43,11 +62,13 @@ public class ZipAddressConverterTest {
 
   @Test
   public void getAddress() throws Exception {
+    mock2510025();
     assertThat(zipAddressConverter.getAddress("2510025")).isEqualTo("神奈川県藤沢市  鵠沼石上");
   }
 
   @Test
   public void getHtml() throws Exception {
+    mock2510025();
     var zipAddressConverter = new ZipAddressConverter();
     var url = Mockito.mock(URL.class);
     var urlConnection = Mockito.mock(URLConnection.class);
