@@ -41,6 +41,17 @@ public class ZipAddressConverter {
     return null;
   }
 
+  public String getAddress(String zipCode) throws IOException {
+    var extractAddress = getExtractAddress(zipCode);
+    if (extractAddress != null) {
+      if (extractAddress.endsWith("  他に掲載がない場合")) {
+        return extractAddress.substring(0, extractAddress.length() - 11);
+      } else {
+        return extractAddress;
+      }
+    }
+    return null;
+  }
   /**
    * 日本郵便のWEBサイトから抽出した住所を取得します.
    *
@@ -48,7 +59,7 @@ public class ZipAddressConverter {
    * @return 日本郵便のWEBサイトから抽出した住所
    * @throws IOException 日本郵便のWEBサイト参照時にエラーがあった場合
    */
-  public String getAddress(String zipCode) throws IOException {
+  public String getExtractAddress(String zipCode) throws IOException {
     var url = new URL("https://www.post.japanpost.jp/kt/zip/e2.cgi?z=" + zipCode + "&xr=1");
     var html = getHtml(url);
     var pattern = Pattern.compile("<BR>.*<BR>(.*)<BR><BR><font");
