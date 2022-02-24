@@ -53,6 +53,8 @@ public class ZipAddressConverter {
     if (extractAddress != null) {
       if (extractAddress.endsWith("  他に掲載がない場合")) {
         return extractAddress.substring(0, extractAddress.length() - 11);
+      } else if (extractAddress.endsWith("（次のビルを除く）")) {
+        return extractAddress.substring(0, extractAddress.length() - 9);
       } else {
         return extractAddress;
       }
