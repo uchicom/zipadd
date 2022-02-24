@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.uchicom</groupId>
     <artifactId>zipadd</artifactId>
-    <version>0.0.2</version>
+    <version>0.0.3</version>
     <packaging>jar</packaging>
 	<name>zipadd</name>
 	<description>Get the address from the zip code.</description>

@@ -32,6 +32,10 @@ public class ZipAddressConverterTest {
     mock("./src/test/resources/2510000.html");
   }
 
+  private void mock1000005() throws Exception {
+    mock("./src/test/resources/1000005.html");
+  }
+
   private void mock(String path) throws Exception {
     try (FileInputStream fis = new FileInputStream(new File(path))) {
       html = new String(fis.readAllBytes(), Charset.forName("Shift_JIS"));
@@ -49,6 +53,12 @@ public class ZipAddressConverterTest {
   public void convertAddress2510000() throws Exception {
     mock2510000();
     assertThat(zipAddressConverter.convertAddress("2510000")).isEqualTo("神奈川県藤沢市");
+  }
+
+  @Test
+  public void convertAddress1000005() throws Exception {
+    mock1000005();
+    assertThat(zipAddressConverter.convertAddress("1000005")).isEqualTo("東京都千代田区丸の内");
   }
 
   @Test
