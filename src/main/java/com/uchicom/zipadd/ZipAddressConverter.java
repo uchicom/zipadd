@@ -3,9 +3,13 @@ package com.uchicom.zipadd;
 
 import com.uchicom.zipadd.dto.AddressDto;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 
 /**
@@ -25,11 +29,24 @@ public class ZipAddressConverter {
    * @throws IOException 日本郵便のWEBサイト参照時にエラーがあった場合
    */
   public String convertAddress(String zipCode) throws IOException {
-    var address = getAddress(zipCode);
-    if (address == null) {
+    var addressList = getAddress(zipCode);
+    if (addressList.isEmpty()) {
       return null;
     }
+    var address = addressList.get(0);
     return address.toString();
+  }
+
+  public String[] convertAddresses(String zipCode) throws IOException {
+    var addressList = getAddress(zipCode);
+    if (addressList.isEmpty()) {
+      return new String[0];
+    }
+    return (String[])
+        addressList.stream()
+            .map(address -> address.toString())
+            .collect(Collectors.toList())
+            .toArray(new String[0]);
   }
 
   /**
@@ -40,10 +57,11 @@ public class ZipAddressConverter {
    * @throws IOException 日本郵便のWEBサイト参照時にエラーがあった場合
    */
   public String[] convertSplitAddress(String zipCode) throws IOException {
-    var address = getAddress(zipCode);
-    if (address == null) {
+    var addressList = getAddress(zipCode);
+    if (addressList.isEmpty()) {
       return null;
     }
+    var address = addressList.get(0);
     if (address.area == null) {
       return new String[] {address.prefecture, address.city};
     }
@@ -57,8 +75,9 @@ public class ZipAddressConverter {
    * @return 日本郵便のWEBサイトから抽出した住所
    * @throws IOException 日本郵便のWEBサイト参照時にエラーがあった場合
    */
-  public AddressDto getAddress(String zipCode) throws IOException {
-    var url = new URL("https://www.post.japanpost.jp/cgi-zip/zipcode.php?zip=" + zipCode);
+  public List<AddressDto> getAddress(String zipCode) throws IOException {
+    var url =
+        URI.create("https://www.post.japanpost.jp/cgi-zip/zipcode.php?zip=" + zipCode).toURL();
     var html = getHtml(url);
     var pattern =
         Pattern.compile(
@@ -68,14 +87,15 @@ public class ZipAddressConverter {
                 + zipCode.substring(3)
                 + "</small></td>\\s+<td class=\"data\"><small>(.+)</small></td>\\s+<td class=\"data\"><small>(.+)</small></td>\\s+<td>\\s+<div class=\"data\">\\s+<p><small><a class=\"line\" href=\"zipcode.php\\?pref=([0-9]+)&city=([0-9]+)+&id=([0-9]+)&merge=\">(.+)</a></small></p>");
     var matcher = pattern.matcher(html);
-    if (matcher.find()) {
+    var list = new ArrayList<AddressDto>(5);
+    while (matcher.find()) {
       var address = new AddressDto();
       address.prefecture = matcher.group(1);
       address.city = matcher.group(2);
       address.area = getArea(matcher.group(6));
-      return address;
+      list.add(address);
     }
-    return null;
+    return list;
   }
 
   String getArea(String area) {
