@@ -118,9 +118,6 @@ public class ZipAddressConverter {
    */
   public String getHtml(URL url) throws IOException {
     var con = url.openConnection();
-    con.setRequestProperty("accept-encoding", "gzip, deflate");
-    con.setRequestProperty("Accept-Language", "ja,en-US;q=0.9,en;q=0.8");
-    con.setRequestProperty("User-Agent", "zipadd/0.0.1");
 
     try (var is = con.getInputStream()) {
       return new String(is.readAllBytes(), StandardCharsets.UTF_8);

@@ -48,6 +48,11 @@ public class ZipAddressConverterTest {
   }
 
   @Test
+  public void convertAddress() throws Exception {
+    assertThat(zipAddressConverter.convertAddress("2510025")).isEqualTo("神奈川県藤沢市鵠沼石上");
+  }
+
+  @Test
   public void convertAddress2510025() throws Exception {
     mock2510025();
     assertThat(zipAddressConverter.convertAddress("2510025")).isEqualTo("神奈川県藤沢市鵠沼石上");
