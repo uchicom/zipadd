@@ -8,7 +8,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.net.URL;
 import java.net.URLConnection;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -38,7 +38,7 @@ public class ZipAddressConverterTest {
 
   private void mock(String path) throws Exception {
     try (FileInputStream fis = new FileInputStream(new File(path))) {
-      html = new String(fis.readAllBytes(), Charset.forName("Shift_JIS"));
+      html = new String(fis.readAllBytes(), StandardCharsets.UTF_8);
       Mockito.doReturn(html).when(zipAddressConverter).getHtml(Mockito.any());
     }
   }
@@ -62,18 +62,31 @@ public class ZipAddressConverterTest {
   }
 
   @Test
-  public void convertSplitAddress() throws Exception {
+  public void convertSplitAddress2510000() throws Exception {
+    mock2510000();
+    var result = zipAddressConverter.convertSplitAddress("2510000");
+    assertThat(result).hasSize(2);
+    assertThat(result[0]).isEqualTo("神奈川県");
+    assertThat(result[1]).isEqualTo("藤沢市");
+  }
+
+  @Test
+  public void convertSplitAddress2510025() throws Exception {
     mock2510025();
     var result = zipAddressConverter.convertSplitAddress("2510025");
-    assertThat(result).hasSize(2);
-    assertThat(result[0]).isEqualTo("神奈川県藤沢市");
-    assertThat(result[1]).isEqualTo("鵠沼石上");
+    assertThat(result).hasSize(3);
+    assertThat(result[0]).isEqualTo("神奈川県");
+    assertThat(result[1]).isEqualTo("藤沢市");
+    assertThat(result[2]).isEqualTo("鵠沼石上");
   }
 
   @Test
   public void getAddress() throws Exception {
     mock2510025();
-    assertThat(zipAddressConverter.getAddress("2510025")).isEqualTo("神奈川県藤沢市  鵠沼石上");
+    var address = zipAddressConverter.getAddress("2510025");
+    assertThat(address.prefecture).isEqualTo("神奈川県");
+    assertThat(address.city).isEqualTo("藤沢市");
+    assertThat(address.area).isEqualTo("鵠沼石上");
   }
 
   @Test
@@ -83,7 +96,7 @@ public class ZipAddressConverterTest {
     var url = Mockito.mock(URL.class);
     var urlConnection = Mockito.mock(URLConnection.class);
     Mockito.doReturn(urlConnection).when(url).openConnection();
-    Mockito.doReturn(new ByteArrayInputStream(html.getBytes(Charset.forName("Shift_JIS"))))
+    Mockito.doReturn(new ByteArrayInputStream(html.getBytes(StandardCharsets.UTF_8)))
         .when(urlConnection)
         .getInputStream();
 
