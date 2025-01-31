@@ -1,15 +1,21 @@
 // (C) 2021 uchicom
 package com.uchicom.zipadd;
 
+import com.uchicom.zipadd.dto.AddressDto;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.regex.Pattern;
+import javax.inject.Inject;
 
 /**
  * 郵便番号住所変換.<br>
  * 日本郵便のWEBを読み込みます.
  */
 public class ZipAddressConverter {
+
+  @Inject
+  public ZipAddressConverter() {}
 
   /**
    * [都道府県][市区町村][町域]を連結した住所を取得します.
@@ -20,46 +26,28 @@ public class ZipAddressConverter {
    */
   public String convertAddress(String zipCode) throws IOException {
     var address = getAddress(zipCode);
-    if (address != null) {
-      return address.replaceAll(" ", "");
+    if (address == null) {
+      return null;
     }
-    return null;
+    return address.toString();
   }
 
   /**
-   * [都道府県][市区町村]と[町域]を配列にした住所を取得します.
+   * [都道府県]と[市区町村]と[町域]を配列にした住所を取得します.
    *
    * @param zipCode 郵便番号
-   * @return 都道府県市区町村と町域で分割した配列
+   * @return 都道府県と市区町村と町域で分割した配列
    * @throws IOException 日本郵便のWEBサイト参照時にエラーがあった場合
    */
   public String[] convertSplitAddress(String zipCode) throws IOException {
-    var result = getAddress(zipCode);
-    if (result != null) {
-      return result.split("  ");
+    var address = getAddress(zipCode);
+    if (address == null) {
+      return null;
     }
-    return null;
-  }
-
-  /**
-   * 日本郵便のWEBサイトから抽出した「他に掲載がない場合」を除去した住所を取得します.
-   *
-   * @param zipCode 郵便番号
-   * @return 日本郵便のWEBサイトから抽出した「他に掲載がない場合」を除去した住所
-   * @throws IOException 日本郵便のWEBサイト参照時にエラーがあった場合
-   */
-  public String getAddress(String zipCode) throws IOException {
-    var extractAddress = getExtractAddress(zipCode);
-    if (extractAddress != null) {
-      if (extractAddress.endsWith("  他に掲載がない場合")) {
-        return extractAddress.substring(0, extractAddress.length() - 11);
-      } else if (extractAddress.endsWith("（次のビルを除く）")) {
-        return extractAddress.substring(0, extractAddress.length() - 9);
-      } else {
-        return extractAddress;
-      }
+    if (address.area == null) {
+      return new String[] {address.prefecture, address.city};
     }
-    return null;
+    return new String[] {address.prefecture, address.city, address.area};
   }
 
   /**
@@ -69,15 +57,36 @@ public class ZipAddressConverter {
    * @return 日本郵便のWEBサイトから抽出した住所
    * @throws IOException 日本郵便のWEBサイト参照時にエラーがあった場合
    */
-  public String getExtractAddress(String zipCode) throws IOException {
-    var url = new URL("https://www.post.japanpost.jp/kt/zip/e2.cgi?z=" + zipCode + "&xr=1");
+  public AddressDto getAddress(String zipCode) throws IOException {
+    var url = new URL("https://www.post.japanpost.jp/cgi-zip/zipcode.php?zip=" + zipCode);
     var html = getHtml(url);
-    var pattern = Pattern.compile("<BR>.*<BR>(.*)<BR><BR><font");
+    var pattern =
+        Pattern.compile(
+            "<small>"
+                + zipCode.substring(0, 3)
+                + "-"
+                + zipCode.substring(3)
+                + "</small></td>\\s+<td class=\"data\"><small>(.+)</small></td>\\s+<td class=\"data\"><small>(.+)</small></td>\\s+<td>\\s+<div class=\"data\">\\s+<p><small><a class=\"line\" href=\"zipcode.php\\?pref=([0-9]+)&city=([0-9]+)+&id=([0-9]+)&merge=\">(.+)</a></small></p>");
     var matcher = pattern.matcher(html);
-    if (matcher.find() && matcher.groupCount() == 1) {
-      return matcher.group(1);
+    if (matcher.find()) {
+      var address = new AddressDto();
+      address.prefecture = matcher.group(1);
+      address.city = matcher.group(2);
+      address.area = getArea(matcher.group(6));
+      return address;
     }
     return null;
+  }
+
+  String getArea(String area) {
+    if (area.contains("以下に掲載がない場合")) {
+      return null;
+    }
+    var index = area.indexOf("（次のビルを除く");
+    if (index > -1) {
+      return area.substring(0, index);
+    }
+    return area;
   }
 
   /**
@@ -89,12 +98,12 @@ public class ZipAddressConverter {
    */
   public String getHtml(URL url) throws IOException {
     var con = url.openConnection();
-    con.setRequestProperty("Accept-Charset", "Shift_JIS,*;q=0.5");
-    con.setRequestProperty("Accept-Language", "ja,en-US;q=0.8,en;q=0.6");
+    con.setRequestProperty("accept-encoding", "gzip, deflate");
+    con.setRequestProperty("Accept-Language", "ja,en-US;q=0.9,en;q=0.8");
     con.setRequestProperty("User-Agent", "zipadd/0.0.1");
 
     try (var is = con.getInputStream()) {
-      return new String(is.readAllBytes(), "MS932");
+      return new String(is.readAllBytes(), StandardCharsets.UTF_8);
     }
   }
 }
