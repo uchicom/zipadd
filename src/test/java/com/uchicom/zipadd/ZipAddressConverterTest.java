@@ -36,6 +36,10 @@ public class ZipAddressConverterTest {
     mock("./src/test/resources/1000005.html");
   }
 
+  private void mock4980000() throws Exception {
+    mock("./src/test/resources/4980000.html");
+  }
+
   private void mock(String path) throws Exception {
     try (FileInputStream fis = new FileInputStream(new File(path))) {
       html = new String(fis.readAllBytes(), StandardCharsets.UTF_8);
@@ -62,6 +66,19 @@ public class ZipAddressConverterTest {
   }
 
   @Test
+  public void convertAddress4980000() throws Exception {
+    mock4980000();
+    assertThat(zipAddressConverter.convertAddress("4980000")).isEqualTo("三重県桑名郡木曽岬町");
+  }
+
+  @Test
+  public void convertAddresses4980000() throws Exception {
+    mock4980000();
+    assertThat(zipAddressConverter.convertAddresses("4980000")[0]).isEqualTo("三重県桑名郡木曽岬町");
+    assertThat(zipAddressConverter.convertAddresses("4980000")[1]).isEqualTo("愛知県弥富市");
+  }
+
+  @Test
   public void convertSplitAddress2510000() throws Exception {
     mock2510000();
     var result = zipAddressConverter.convertSplitAddress("2510000");
@@ -83,10 +100,11 @@ public class ZipAddressConverterTest {
   @Test
   public void getAddress() throws Exception {
     mock2510025();
-    var address = zipAddressConverter.getAddress("2510025");
-    assertThat(address.prefecture).isEqualTo("神奈川県");
-    assertThat(address.city).isEqualTo("藤沢市");
-    assertThat(address.area).isEqualTo("鵠沼石上");
+    var list = zipAddressConverter.getAddress("2510025");
+    assertThat(list).hasSize(1);
+    assertThat(list.get(0).prefecture).isEqualTo("神奈川県");
+    assertThat(list.get(0).city).isEqualTo("藤沢市");
+    assertThat(list.get(0).area).isEqualTo("鵠沼石上");
   }
 
   @Test
