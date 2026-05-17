@@ -2,15 +2,13 @@
 package com.uchicom.zipadd;
 
 import com.uchicom.zipadd.dto.AddressDto;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
+import com.uchicom.zipadd.exception.ZipAddException;
+import com.uchicom.zipadd.helper.JapanpostHelper;
+import java.net.http.HttpClient;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 
 /**
  * 郵便番号住所変換.<br>
@@ -18,7 +16,6 @@ import javax.inject.Inject;
  */
 public class ZipAddressConverter {
 
-  @Inject
   public ZipAddressConverter() {}
 
   /**
@@ -26,9 +23,9 @@ public class ZipAddressConverter {
    *
    * @param zipCode 郵便番号
    * @return 連結した住所
-   * @throws IOException 日本郵便のWEBサイト参照時にエラーがあった場合
+   * @throws ZipAddException 日本郵便のWEBサイト参照時にエラーがあった場合
    */
-  public String convertAddress(String zipCode) throws IOException {
+  public String convertAddress(String zipCode) throws ZipAddException {
     var addressList = getAddress(zipCode);
     if (addressList.isEmpty()) {
       return null;
@@ -37,7 +34,7 @@ public class ZipAddressConverter {
     return address.toString();
   }
 
-  public String[] convertAddresses(String zipCode) throws IOException {
+  public String[] convertAddresses(String zipCode) throws ZipAddException {
     var addressList = getAddress(zipCode);
     if (addressList.isEmpty()) {
       return new String[0];
@@ -54,15 +51,15 @@ public class ZipAddressConverter {
    *
    * @param zipCode 郵便番号
    * @return 都道府県と市区町村と町域で分割した配列
-   * @throws IOException 日本郵便のWEBサイト参照時にエラーがあった場合
+   * @throws ZipAddException 日本郵便のWEBサイト参照時にエラーがあった場合
    */
-  public String[] convertSplitAddress(String zipCode) throws IOException {
+  public String[] convertSplitAddress(String zipCode) throws ZipAddException {
     var addressList = getAddress(zipCode);
     if (addressList.isEmpty()) {
       return null;
     }
     var address = addressList.get(0);
-    if (address.area == null) {
+    if (address.area == null || address.area.isBlank()) {
       return new String[] {address.prefecture, address.city};
     }
     return new String[] {address.prefecture, address.city, address.area};
@@ -73,27 +70,36 @@ public class ZipAddressConverter {
    *
    * @param zipCode 郵便番号
    * @return 日本郵便のWEBサイトから抽出した住所
-   * @throws IOException 日本郵便のWEBサイト参照時にエラーがあった場合
+   * @throws ZipAddException 日本郵便のWEBサイト参照時にエラーがあった場合
    */
-  public List<AddressDto> getAddress(String zipCode) throws IOException {
-    var url =
-        URI.create("https://www.post.japanpost.jp/cgi-zip/zipcode.php?zip=" + zipCode).toURL();
-    var html = getHtml(url);
+  public List<AddressDto> getAddress(String zipCode) throws ZipAddException {
+    var html = getHtml(zipCode);
     var pattern =
         Pattern.compile(
-            "<small>"
-                + zipCode.substring(0, 3)
-                + "-"
-                + zipCode.substring(3)
-                + "</small></td>\\s+<td class=\"data\"><small>(.+)</small></td>\\s+<td class=\"data\"><small>(.+)</small></td>\\s+<td>\\s+<div class=\"data\">\\s+<p><small><a class=\"line\" href=\"zipcode.php\\?pref=([0-9]+)&city=([0-9]+)+&id=([0-9]+)&merge=\">(.+)</a></small></p>");
+            "window.__RESULT__\\s*=\\s*\\{\\s*zip:\\s*\".*\",\\s*pref:\\s*\"(.*)\",\\s*city:\\s*\"(.*)\",\\s*addr: \"(.*)\",\\s*addr_kana:\\s*\"(.*)\"\\s*\\};");
     var matcher = pattern.matcher(html);
     var list = new ArrayList<AddressDto>(5);
-    while (matcher.find()) {
-      var address = new AddressDto();
-      address.prefecture = matcher.group(1);
-      address.city = matcher.group(2);
-      address.area = getArea(matcher.group(6));
-      list.add(address);
+    if (matcher.find()) {
+      var prefecture = matcher.group(1);
+      var city = matcher.group(2);
+      var area = getArea(matcher.group(3)).replace("掲載がない場合", "");
+      for (var areaName : area.split("、")) {
+        var address = new AddressDto();
+        address.prefecture = prefecture;
+        address.city = city;
+        address.area = areaName;
+        list.add(address);
+      }
+    } else {
+      var pattern2 = Pattern.compile(">\\s*([^<]+[都道府県])([^<]+[市区町村])([^<]*)\\s*<");
+      var matcher2 = pattern2.matcher(html);
+      while (matcher2.find()) {
+        var address = new AddressDto();
+        address.prefecture = matcher2.group(1);
+        address.city = matcher2.group(2);
+        address.area = matcher2.group(3);
+        list.add(address);
+      }
     }
     return list;
   }
@@ -112,15 +118,14 @@ public class ZipAddressConverter {
   /**
    * 日本郵便のWEBサイトのテキストデータを取得します.
    *
-   * @param url 日本郵便のWEBサイトURL
+   * @param zipCode 郵便番号
    * @return 日本郵便のWEBサイトのテキストデータ
-   * @throws IOException 日本郵便のWEBサイト参照時にエラーがあった場合
+   * @throws ZipAddException 日本郵便のWEBサイト参照時にエラーがあった場合
    */
-  public String getHtml(URL url) throws IOException {
-    var con = url.openConnection();
-
-    try (var is = con.getInputStream()) {
-      return new String(is.readAllBytes(), StandardCharsets.UTF_8);
+  public String getHtml(String zipCode) throws ZipAddException {
+    try (var httpClient = HttpClient.newHttpClient()) {
+      var helper = new JapanpostHelper(httpClient);
+      return helper.getAddress(zipCode);
     }
   }
 }

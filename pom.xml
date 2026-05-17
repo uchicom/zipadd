@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.uchicom</groupId>
   <artifactId>zipadd</artifactId>
-  <version>0.1.2</version>
+  <version>1.0.0</version>
   <packaging>jar</packaging>
   <name>zipadd</name>
   <description>Get the address from the zip code.</description>
@@ -44,32 +44,31 @@
   </properties>
   <dependencies>
     <dependency>
-      <groupId>com.google.dagger</groupId>
-      <artifactId>dagger</artifactId>
-      <version>2.54</version>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>2.21.3</version>
     </dependency>
     <dependency>
-      <groupId>com.google.dagger</groupId>
-      <artifactId>dagger-compiler</artifactId>
-      <version>2.54</version>
-      <scope>provided</scope>
+      <groupId>com.fasterxml.jackson.datatype</groupId>
+      <artifactId>jackson-datatype-jsr310</artifactId>
+      <version>2.21.3</version>
     </dependency>
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
-      <version>5.14.2</version>
+      <version>5.23.0</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.assertj</groupId>
       <artifactId>assertj-core</artifactId>
-      <version>3.27.0</version>
+      <version>3.27.7</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-api</artifactId>
-      <version>5.11.4</version>
+      <artifactId>junit-jupiter</artifactId>
+      <version>6.0.3</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -80,8 +79,8 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.13.0</version>
         <configuration>
-          <source>21</source>
-          <target>21</target>
+          <source>25</source>
+          <target>25</target>
           <encoding>UTF-8</encoding>
           <fork>true</fork>
           <compilerArgs>
@@ -161,7 +160,7 @@
             <importOrder></importOrder>
             <removeUnusedImports></removeUnusedImports>
             <googleJavaFormat>
-              <version>1.17.0</version>
+              <version>1.28.0</version>
               <style>GOOGLE</style>
             </googleJavaFormat>
             <licenseHeader>
@@ -198,7 +197,7 @@
           <plugin>
             <groupId>org.jacoco</groupId>
             <artifactId>jacoco-maven-plugin</artifactId>
-            <version>0.8.12</version>
+            <version>0.8.14</version>
             <executions>
               <execution>
                 <id>default-prepare-agent</id>
@@ -262,14 +261,13 @@
       <build>
         <plugins>
           <plugin>
-            <groupId>org.sonatype.plugins</groupId>
-            <artifactId>nexus-staging-maven-plugin</artifactId>
-            <version>1.7.0</version>
+            <groupId>org.sonatype.central</groupId>
+            <artifactId>central-publishing-maven-plugin</artifactId>
+            <version>0.10.0</version>
             <extensions>true</extensions>
             <configuration>
-              <serverId>ossrh</serverId>
-              <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-              <autoReleaseAfterClose>true</autoReleaseAfterClose>
+              <publishingServerId>central</publishingServerId>
+              <autoPublish>true</autoPublish>
             </configuration>
           </plugin>
           <plugin>
